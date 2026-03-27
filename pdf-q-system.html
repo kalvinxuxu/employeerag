@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF 智能问答系统</title>
+    <style>
+        :root {
+            /* 背景色 */
+            --bg-primary: #F8F9FA;
+            --bg-secondary: #FFFFFF;
+            --bg-tertiary: #F0F2F5;
+
+            /* 主色调 */
+            --blue-light: #E3F2FD;
+            --blue-dark: #1565C0;
+            --green-light: #E8F5E9;
+            --green-dark: #2E7D32;
+
+            /* 文字色 */
+            --text-primary: #212121;
+            --text-secondary: #424242;
+            --text-tertiary: #757575;
+
+            /* 边框色 */
+            --border: #E0E0E0;
+
+            /* 阴影 */
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+
+            /* 圆角 */
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+
+            /* 间距 */
+            --space-xs: 8px;
+            --space-sm: 12px;
+            --space-md: 20px;
+            --space-lg: 32px;
+            --space-xl: 48px;
+
+            /* 字体 */
+            --font-family: 'PingFang SC', 'Microsoft YaHei', 'Source Han Sans CN', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* 布局容器 */
+        .app-container {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            grid-template-rows: 64px 1fr;
+            height: 100vh;
+            gap: var(--space-md);
+            padding: var(--space-md) var(--space-md) var(--space-md) var(--space-md);
+        }
+
+        /* 顶部导航栏 */
+        .header {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--space-lg);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--blue-light);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--blue-dark);
+            font-size: 20px;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            padding: var(--space-xs) var(--space-sm);
+            width: 320px;
+        }
+
+        .search-bar input {
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            width: 100%;
+            outline: none;
+            color: var(--text-primary);
+        }
+
+        .search-bar input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .btn {
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .btn-primary {
+            background: var(--blue-dark);
+            color: #FFFFFF;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.92;
+        }
+
+        /* 左侧边栏 - PDF 列表 */
+        .sidebar {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: var(--space-md) var(--space-lg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--space-sm);
+        }
+
+        .pdf-item {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-sm);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: background 0.15s ease;
+            margin-bottom: var(--space-xs);
+        }
+
+        .pdf-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .pdf-item.active {
+            background: var(--blue-light);
+        }
+
+        .pdf-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--text-tertiary);
+            font-size: 18px;
+        }
+
+        .pdf-item.active .pdf-icon {
+            background: var(--blue-dark);
+            color: #FFFFFF;
+        }
+
+        .pdf-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pdf-name {
+            font-size: 14px;
+            font-weight: 400;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pdf-meta {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+            display: flex;
+            gap: var(--space-sm);
+        }
+
+        /* 主内容区 - PDF 预览 + 对话 */
+        .main-content {
+            display: grid;
+            grid-template-rows: 1fr 1fr;
+            gap: var(--space-md);
+            min-width: 0;
+        }
+
+        /* PDF 预览区 */
+        .pdf-preview {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .pdf-preview-header {
+            padding: var(--space-md) var(--space-lg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .pdf-preview-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .pdf-preview-controls {
+            display: flex;
+            gap: var(--space-xs);
+        }
+
+        .pdf-page {
+            flex: 1;
+            background: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-lg);
+        }
+
+        .pdf-page-inner {
+            background: #FFFFFF;
+            width: 100%;
+            height: 100%;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
+        }
+
+        /* 对话区 */
+        .chat-section {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: var(--space-md) var(--space-lg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--space-lg);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+        }
+
+        .message {
+            display: flex;
+            gap: var(--space-sm);
+            max-width: 85%;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+
+        .message.assistant .message-avatar {
+            background: var(--blue-light);
+            color: var(--blue-dark);
+        }
+
+        .message.user .message-avatar {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        .message-content {
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .message.assistant .message-content {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-bottom-left-radius: var(--radius-sm);
+        }
+
+        .message.user .message-content {
+            background: var(--blue-light);
+            color: var(--blue-dark);
+            border-bottom-right-radius: var(--radius-sm);
+        }
+
+        .message-sources {
+            margin-top: var(--space-sm);
+            padding-top: var(--space-sm);
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        .source-tag {
+            display: inline-block;
+            padding: 2px var(--space-xs);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            margin-right: var(--space-xs);
+            margin-top: var(--space-xs);
+        }
+
+        /* 输入区 */
+        .chat-input-area {
+            padding: var(--space-md) var(--space-lg);
+            border-top: 1px solid var(--border);
+            background: var(--bg-tertiary);
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: var(--space-sm);
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: var(--space-sm) var(--space-md);
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            background: var(--bg-secondary);
+            min-height: 48px;
+            max-height: 120px;
+        }
+
+        .chat-input:focus {
+            border-color: var(--blue-dark);
+        }
+
+        .chat-send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            background: var(--blue-dark);
+            color: #FFFFFF;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s ease;
+        }
+
+        .chat-send-btn:hover {
+            opacity: 0.92;
+        }
+
+        /* 右侧边栏 - 会话历史 */
+        .sessions-panel {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sessions-header {
+            padding: var(--space-md) var(--space-lg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sessions-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .sessions-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--space-sm);
+        }
+
+        .session-item {
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: background 0.15s ease;
+            margin-bottom: var(--space-xs);
+        }
+
+        .session-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .session-item.active {
+            background: var(--green-light);
+        }
+
+        .session-title {
+            font-size: 14px;
+            font-weight: 400;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .session-meta {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-tertiary);
+        }
+
+        /* 工具类 */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px var(--space-xs);
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .badge-blue {
+            background: var(--blue-light);
+            color: var(--blue-dark);
+        }
+
+        .badge-green {
+            background: var(--green-light);
+            color: var(--green-dark);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 顶部导航栏 -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">
+                    <div class="logo-icon">📚</div>
+                    <span>PDF 智能问答系统</span>
+                </div>
+                <div class="search-bar">
+                    <input type="text" placeholder="搜索文档或问题...">
+                </div>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-secondary">导入 PDF</button>
+                <button class="btn btn-primary">新建会话</button>
+            </div>
+        </header>
+
+        <!-- 左侧边栏 - PDF 列表 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span class="sidebar-title">我的文档</span>
+                <span class="badge badge-blue">12 个</span>
+            </div>
+            <div class="sidebar-content">
+                <div class="pdf-item active">
+                    <div class="pdf-icon">📄</div>
+                    <div class="pdf-info">
+                        <div class="pdf-name">深度学习导论.pdf</div>
+                        <div class="pdf-meta">
+                            <span>2.4 MB</span>
+                            <span>128 页</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="pdf-item">
+                    <div class="pdf-icon">📄</div>
+                    <div class="pdf-info">
+                        <div class="pdf-name">神经网络与深度学习.pdf</div>
+                        <div class="pdf-meta">
+                            <span>5.1 MB</span>
+                            <span>256 页</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="pdf-item">
+                    <div class="pdf-icon">📄</div>
+                    <div class="pdf-info">
+                        <div class="pdf-name">机器学习实战.pdf</div>
+                        <div class="pdf-meta">
+                            <span>3.8 MB</span>
+                            <span>189 页</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="pdf-item">
+                    <div class="pdf-icon">📄</div>
+                    <div class="pdf-info">
+                        <div class="pdf-name">自然语言处理.pdf</div>
+                        <div class="pdf-meta">
+                            <span>4.2 MB</span>
+                            <span>312 页</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="pdf-item">
+                    <div class="pdf-icon">📄</div>
+                    <div class="pdf-info">
+                        <div class="pdf-name">计算机视觉基础.pdf</div>
+                        <div class="pdf-meta">
+                            <span>6.7 MB</span>
+                            <span>428 页</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- PDF 预览区 -->
+            <div class="pdf-preview">
+                <div class="pdf-preview-header">
+                    <span class="pdf-preview-title">深度学习导论.pdf</span>
+                    <div class="pdf-preview-controls">
+                        <button class="btn btn-secondary">上一页</button>
+                        <span style="font-size: 13px; color: var(--text-tertiary); padding: 0 var(--space-sm);">第 24 / 128 页</span>
+                        <button class="btn btn-secondary">下一页</button>
+                    </div>
+                </div>
+                <div class="pdf-page">
+                    <div class="pdf-page-inner">
+                        <span>PDF 预览区域</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 对话区 -->
+            <div class="chat-section">
+                <div class="chat-header">
+                    <span class="chat-title">智能问答</span>
+                    <span class="badge badge-green">AI 在线</span>
+                </div>
+                <div class="chat-messages">
+                    <div class="message assistant">
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-content">
+                            <div>您好！我是您的 PDF 智能助手。您可以问我关于当前文档的任何问题，我会基于文档内容为您提供准确的答案。</div>
+                            <div class="message-sources">
+                                <span class="source-tag">📖 第 1-10 页</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="message user">
+                        <div class="message-avatar">👤</div>
+                        <div class="message-content">
+                            什么是卷积神经网络（CNN）？
+                        </div>
+                    </div>
+                    <div class="message assistant">
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-content">
+                            <div>卷积神经网络（Convolutional Neural Network，CNN）是一种专门用于处理具有网格结构数据的深度学习模型，最常用于图像处理和计算机视觉任务。</div>
+                            <div style="margin-top: 12px;">CNN 的核心组件包括：</div>
+                            <div style="margin-top: 8px; margin-left: 16px;">
+                                <strong>1. 卷积层：</strong> 使用卷积核提取局部特征<br>
+                                <strong>2. 池化层：</strong> 降低特征图维度，减少计算量<br>
+                                <strong>3. 全连接层：</strong> 将学到的特征映射到输出
+                            </div>
+                            <div class="message-sources">
+                                <span class="source-tag">📖 第 24-28 页</span>
+                                <span class="source-tag">📖 第 35 页</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <div class="chat-input-wrapper">
+                        <textarea class="chat-input" placeholder="输入您的问题..." rows="1"></textarea>
+                        <button class="chat-send-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 7L22 2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 右侧边栏 - 会话历史 -->
+        <aside class="sessions-panel">
+            <div class="sessions-header">
+                <span class="sessions-title">会话历史</span>
+                <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;">清空</button>
+            </div>
+            <div class="sessions-content">
+                <div class="session-item active">
+                    <div class="session-title">CNN 架构相关问题</div>
+                    <div class="session-meta">今日 14:32 · 8 条消息</div>
+                </div>
+                <div class="session-item">
+                    <div class="session-title">反向传播算法推导</div>
+                    <div class="session-meta">今日 10:15 · 12 条消息</div>
+                </div>
+                <div class="session-item">
+                    <div class="session-title">损失函数对比分析</div>
+                    <div class="session-meta">昨日 16:45 · 5 条消息</div>
+                </div>
+                <div class="session-item">
+                    <div class="session-title">优化器选择建议</div>
+                    <div class="session-meta">3 月 25 日 · 15 条消息</div>
+                </div>
+            </div>
+        </aside>
+    </div>
+</body>
+</html>
